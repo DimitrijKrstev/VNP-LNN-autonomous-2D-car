@@ -17,13 +17,13 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
 
-        # LNN as the Q-network
-        self.device = torch.cuda.get_device_name(1)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        # LNN as the Q-network
         self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
         self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
 
-        self.target_network.load_state_dict(self.q_network.state_dict())  # Synchronize networks
+        self.update_target_network()  # Synchronize networks
 
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
         self.loss_fn = nn.MSELoss()
@@ -33,9 +33,8 @@ class DQNAgent:
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
-        #    return np.random.rand(self.num_actions)
             return np.random.randint(2, self.num_actions)
-        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)  # Add batch size
         q_values, _ = self.q_network(state)
         return torch.argmax(q_values).item()
 
@@ -56,8 +55,6 @@ class DQNAgent:
 
         # Get Q-values for current states
         q_values, _ = self.q_network(state_batch)
-        #print(f"q_values shape: {q_values.shape}")
-        #print(f"action_batch shape: {action_batch.shape}")
         q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
         # Get Q-values for next states using the target network

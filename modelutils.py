@@ -27,9 +27,10 @@ def train_agent(agent, env, save_path, num_episodes=100, target_update_interval=
 
         print(f"Episode {episode + 1}: Total Reward = {total_reward}")
 
+        agent.update_target_network()
+
         if (episode + 1) % target_update_interval == 0:
             save_agent(agent, save_path + str((episode + 1) / target_update_interval) + '.pth')
-            agent.update_target_network()
 
     save_agent(agent, save_path)
 

@@ -8,6 +8,8 @@ if __name__ == '__main__':
 
     # steering, gas, brake
     num_actions = 5
+
+    # grayscale 96x96 image
     input_shape = (1, 96, 96)
 
     agent = DQNAgent(input_shape=input_shape, num_actions=env.action_space.n)
