@@ -30,8 +30,9 @@ class DQNAgent:
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
-            return np.random.randint(self.num_actions)
-        state = torch.FloatTensor(state).unsqueeze(0).unsqueeze(0)  # Add batch and channel dimension
+        #    return np.random.rand(self.num_actions)
+            return np.random.randint(2, self.num_actions)
+        state = torch.FloatTensor(state).unsqueeze(0) #.unsqueeze(0)  # Add batch and channel dimension
         q_values, _ = self.q_network(state)
         return torch.argmax(q_values).item()
 
@@ -52,6 +53,8 @@ class DQNAgent:
 
         # Get Q-values for current states
         q_values, _ = self.q_network(state_batch)
+        #print(f"q_values shape: {q_values.shape}")
+        #print(f"action_batch shape: {action_batch.shape}")
         q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
         # Get Q-values for next states using the target network

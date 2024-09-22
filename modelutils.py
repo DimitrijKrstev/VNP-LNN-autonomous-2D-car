@@ -1,9 +1,9 @@
 import torch
 import numpy as np
-from PIL import Image
+import cv2
 
 
-def train_agent(agent, env, save_path, num_episodes=1000, target_update_interval=10, save_agent_interval=200):
+def train_agent(agent, env, save_path, num_episodes=100, target_update_interval=10):
 
     for episode in range(num_episodes):
         state, _ = env.reset()
@@ -14,9 +14,9 @@ def train_agent(agent, env, save_path, num_episodes=1000, target_update_interval
 
         while not done:
             action = agent.act(state)
-            next_state, reward, done, info = env.step(action)
+            next_state, reward, done, _, info = env.step(action)
 
-            next_state = np.mean(next_state, axis=2)  # Convert to grayscale
+            next_state = preprocess_image(next_state)
 
             agent.remember(state, action, reward, next_state, done)
 
@@ -25,14 +25,11 @@ def train_agent(agent, env, save_path, num_episodes=1000, target_update_interval
 
             agent.train()
 
-        if episode % save_agent_interval == 0:
-            save_agent(agent, save_path)
-
-        # Update target network
-        elif episode % target_update_interval == 0:
-            agent.update_target_network()
-
         print(f"Episode {episode + 1}: Total Reward = {total_reward}")
+
+        if (episode + 1) % target_update_interval == 0:
+            save_agent(agent, save_path + str((episode + 1) / target_update_interval) + '.pth')
+            agent.update_target_network()
 
     save_agent(agent, save_path)
 
@@ -153,6 +150,20 @@ def load_full_agent(agent, optimizer, file_path):
 
 
 def preprocess_image(state):
-    gray_image = Image.fromarray(state).convert('L')
-    gray_array = np.array(gray_image, dtype=np.float32) / 255.0
-    return gray_array
+    # gray_image = Image.fromarray(state).convert('L')
+    # gray_array = np.array(gray_image, dtype=np.float32) / 255.0
+    # return gray_array
+
+    # Convert image to grayscale
+    grayscale_image = np.mean(state, axis=2, dtype=np.float32)
+
+    # Normalize pixel values between 0 and 1
+    grayscale_image /= 255.0
+
+    # Resize the image to 96x96 if required (depends on your model's input size)
+    grayscale_image = cv2.resize(grayscale_image, (96, 96))
+
+    # Add a channel dimension (1, 96, 96)
+    grayscale_image = np.expand_dims(grayscale_image, axis=0)
+
+    return grayscale_image

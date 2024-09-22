@@ -14,8 +14,8 @@ class LiquidNeuralNetwork(nn.Module):
 
         self.flatten = nn.Flatten()
 
-        # LSTM layer for simulating liquid dynamics
-        self.lstm = nn.LSTM(input_size=64 * 7 * 7, hidden_size=hidden_size, batch_first=True)
+        # Update LSTM input size based on conv layer output dimensions (64 * 10 * 10 = 6400)
+        self.lstm = nn.LSTM(input_size=64 * 10 * 10, hidden_size=hidden_size, batch_first=True)
 
         # Fully connected output layer
         self.fc = nn.Linear(hidden_size, num_actions)

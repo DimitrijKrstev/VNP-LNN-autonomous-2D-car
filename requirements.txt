@@ -1,5 +1,6 @@
-gymnasium
+gymnasium~=0.29.1
 pygame
-numpy
-torch
+numpy~=2.0.2
+torch~=2.4.1
 torchvision
+opencv-python
