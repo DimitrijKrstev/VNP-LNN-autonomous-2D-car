@@ -4,7 +4,7 @@ from dqn import *
 
 if __name__ == '__main__':
 
-    env = gym.make('CarRacing-v2', continuous=False, render_mode='human')
+    env = gym.make('CarRacing-v2', continuous=False)
 
     # steering, gas, brake
     num_actions = 5

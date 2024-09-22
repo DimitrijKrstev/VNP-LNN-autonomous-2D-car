@@ -18,8 +18,11 @@ class DQNAgent:
         self.epsilon_decay = 0.995
 
         # LNN as the Q-network
-        self.q_network = LiquidNeuralNetwork(input_shape, num_actions)
-        self.target_network = LiquidNeuralNetwork(input_shape, num_actions)
+        self.device = torch.cuda.get_device_name(1)
+
+        self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+        self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+
         self.target_network.load_state_dict(self.q_network.state_dict())  # Synchronize networks
 
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
@@ -32,7 +35,7 @@ class DQNAgent:
         if np.random.rand() <= self.epsilon:
         #    return np.random.rand(self.num_actions)
             return np.random.randint(2, self.num_actions)
-        state = torch.FloatTensor(state).unsqueeze(0) #.unsqueeze(0)  # Add batch and channel dimension
+        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         q_values, _ = self.q_network(state)
         return torch.argmax(q_values).item()
 
@@ -45,11 +48,11 @@ class DQNAgent:
         state_batch, action_batch, reward_batch, next_state_batch, done_batch = zip(*batch)
 
         # Convert batches to tensors
-        state_batch = torch.FloatTensor(np.array(state_batch))
-        action_batch = torch.LongTensor(action_batch)
-        reward_batch = torch.FloatTensor(reward_batch)
-        next_state_batch = torch.FloatTensor(np.array(next_state_batch))
-        done_batch = torch.FloatTensor(done_batch)
+        state_batch = torch.FloatTensor(np.array(state_batch)).to(self.device)
+        action_batch = torch.LongTensor(action_batch).to(self.device)
+        reward_batch = torch.FloatTensor(reward_batch).to(self.device)
+        next_state_batch = torch.FloatTensor(np.array(next_state_batch)).to(self.device)
+        done_batch = torch.FloatTensor(done_batch).to(self.device)
 
         # Get Q-values for current states
         q_values, _ = self.q_network(state_batch)
