@@ -39,7 +39,7 @@ class LiquidNeuralNetwork(nn.Module):
         lstm_out, hidden_state = self.lstm(x, hidden_state)
 
         # Apply time-dependent behavior using sine modulation (liquid-like dynamics)
-        time_dependent_output = lstm_out * torch.sin(self.time_varying_weights)
+        time_dependent_output = lstm_out * torch.sin(self.time_varying_weights.unsqueeze(0).unsqueeze(0))
 
         # Output layer
         output = self.fc(time_dependent_output[:, -1, :])  # Take only the last output of the sequence

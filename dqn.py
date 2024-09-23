@@ -33,9 +33,15 @@ class DQNAgent:
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
-            return np.random.randint(2, self.num_actions)
-        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)  # Add batch size
-        q_values, _ = self.q_network(state)
+            # Exploration: Randomly select one of the 5 actions
+            return np.random.randint(0, self.num_actions)
+
+        # Exploitation: Use the Q-network to predict the best action
+        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+
+        # Inference mode, no need to track gradients
+        with torch.no_grad():
+            q_values, _ = self.q_network(state)
         return torch.argmax(q_values).item()
 
     def train(self):
@@ -54,11 +60,11 @@ class DQNAgent:
         done_batch = torch.FloatTensor(done_batch).to(self.device)
 
         # Get Q-values for current states
-        q_values, _ = self.q_network(state_batch)
+        q_values, _ = self.q_network.forward(state_batch)
         q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
         # Get Q-values for next states using the target network
-        next_q_values, _ = self.target_network(next_state_batch)
+        next_q_values, _ = self.target_network.forward(next_state_batch)
         next_q_values = next_q_values.max(1)[0]
 
         # Calculate target Q-values
@@ -75,4 +81,5 @@ class DQNAgent:
             self.epsilon *= self.epsilon_decay
 
     def update_target_network(self):
-        self.target_network.load_state_dict(self.q_network.state_dict())
+        with torch.no_grad():
+            self.target_network.load_state_dict(self.q_network.state_dict())
