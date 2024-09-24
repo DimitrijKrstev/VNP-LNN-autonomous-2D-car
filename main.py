@@ -1,6 +1,6 @@
 import gymnasium as gym
 from modelutils import *
-from dqn import *
+from lnndqn import *
 
 if __name__ == '__main__':
 

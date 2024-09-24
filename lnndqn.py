@@ -1,4 +1,5 @@
 from lnnsim import LiquidNeuralNetwork
+import lnn
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -20,8 +21,11 @@ class DQNAgent:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # LNN as the Q-network
-        self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
-        self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+        #self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+        #self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+
+        self.q_network = lnn.LiquidRecurrentDQN(256, 3, 4, 5).to(self.device)
+        self.target_network = lnn.LiquidRecurrentDQN(256, 3, 4, 5).to(self.device)
 
         self.update_target_network()  # Synchronize networks
 
@@ -59,12 +63,14 @@ class DQNAgent:
         next_state_batch = torch.FloatTensor(np.array(next_state_batch)).to(self.device)
         done_batch = torch.FloatTensor(done_batch).to(self.device)
 
+        delta_t = torch.ones((self.batch_size, 3))
+
         # Get Q-values for current states
-        q_values, _ = self.q_network.forward(state_batch)
+        q_values, _ = self.q_network.forward(state_batch, delta_t)
         q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
         # Get Q-values for next states using the target network
-        next_q_values, _ = self.target_network.forward(next_state_batch)
+        next_q_values, _ = self.target_network.forward(next_state_batch, delta_t)
         next_q_values = next_q_values.max(1)[0]
 
         # Calculate target Q-values
