@@ -1,4 +1,5 @@
 from lnnsim import LiquidNeuralNetwork
+import lnn
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +9,8 @@ from collections import deque
 
 
 class DQNAgent:
-    def __init__(self, input_shape, num_actions, memory_size=10000, batch_size=32, gamma=0.99, lr=0.001):
+    def __init__(self, model, input_shape, num_actions, memory_size=10000, batch_size=32, gamma=0.99, lr=0.001):
+        self.model = model
         self.num_actions = num_actions
         self.memory = deque(maxlen=memory_size)
         self.batch_size = batch_size
@@ -20,8 +22,12 @@ class DQNAgent:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # LNN as the Q-network
-        self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
-        self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+        if self.model == "lnn-sim":
+            self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+            self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+        else:
+            self.q_network = lnn.LiquidRecurrentDQN(256, 1, 4, 5).to(self.device)
+            self.target_network = lnn.LiquidRecurrentDQN(256, 1, 4, 5).to(self.device)
 
         self.update_target_network()  # Synchronize networks
 
@@ -59,12 +65,18 @@ class DQNAgent:
         next_state_batch = torch.FloatTensor(np.array(next_state_batch)).to(self.device)
         done_batch = torch.FloatTensor(done_batch).to(self.device)
 
+        if self.model == "lnn-sim":
+            q_values, _ = self.q_network.forward(state_batch)
+            next_q_values, _ = self.target_network.forward(next_state_batch)
+        else:
+            delta_t = torch.ones((self.batch_size, 3))
+            q_values, _ = self.q_network.forward(state_batch, delta_t)
+            next_q_values, _ = self.target_network.forward(next_state_batch, delta_t)
+
         # Get Q-values for current states
-        q_values, _ = self.q_network.forward(state_batch)
         q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
         # Get Q-values for next states using the target network
-        next_q_values, _ = self.target_network.forward(next_state_batch)
         next_q_values = next_q_values.max(1)[0]
 
         # Calculate target Q-values

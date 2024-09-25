@@ -46,7 +46,7 @@ def test_agent(agent, env, num_episodes=5, render=True):
     """
     for episode in range(num_episodes):
         state = env.reset()
-        state = np.mean(state, axis=2)  # Convert to grayscale (1 channel)
+        state = preprocess_image(state)
         total_reward = 0
         done = False
         hidden_state = None  # To store the LSTM hidden state
@@ -65,16 +65,12 @@ def test_agent(agent, env, num_episodes=5, render=True):
             # Select action with the highest Q-value (greedy action)
             action = torch.argmax(q_values).item()
 
-            # Perform the action in the environment
             next_state, reward, done, info = env.step(action)
 
-            # Convert next state to grayscale
-            next_state = np.mean(next_state, axis=2)
+            next_state = preprocess_image(next_state)
 
-            # Update the total reward
             total_reward += reward
 
-            # Update the current state
             state = next_state
 
         print(f"Test Episode {episode + 1}: Total Reward = {total_reward}")
