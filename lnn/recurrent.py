@@ -44,7 +44,7 @@ class LiquidRecurrent(nn.Module):
         return th.stack(outputs, -1)
 
     def forward(self, i: th.Tensor, delta_t: th.Tensor) -> th.Tensor:
-        b, _, _ = i.size()
+        b = i.size(dim=1)
 
         x_t = self.__get_first_x(b)
         i = self._process_input(i)
@@ -130,59 +130,6 @@ class LiquidRecurrentDQN(LiquidRecurrent):
     # Sequence processing to return the final result (use the last step)
     def _sequence_processing(self, outputs: List[th.Tensor]) -> th.Tensor:
         return outputs[-1]  # Return the last output (final Q-values for DQN)
-
-
-class LiquidRecurrentBrainActivity(LiquidRecurrent):
-    def __init__(
-            self,
-            neuron_number: int,
-            input_size: int,
-            unfolding_steps: int,
-            output_size: int,
-    ) -> None:
-        nb_layer = 6
-        factor = sqrt(2)
-        encoder_dim = 16
-
-        channels = [
-            (
-                int(encoder_dim * factor ** i),
-                int(encoder_dim * factor ** (i + 1)),
-            )
-            for i in range(nb_layer)
-        ]
-
-        super().__init__(
-            neuron_number,
-            channels[-1][1],
-            unfolding_steps,
-            output_size,
-        )
-
-        self.__conv = nn.Sequential(
-            Conv2d(input_size, channels[0][0], dilation=1),
-            nn.Mish(),
-            TimeNorm(channels[0][0]),
-            *[
-                nn.Sequential(
-                    nn.AvgPool1d(2, 2),
-                    CausalConv1d(c_i, c_o, dilation=1),
-                    nn.Mish(),
-                    TimeNorm(c_o),
-                )
-                for c_i, c_o in channels
-            ]
-        )
-
-    def _process_input(self, i: th.Tensor) -> th.Tensor:
-        out: th.Tensor = self.__conv(i)
-        return out
-
-    def _output_processing(self, out: th.Tensor) -> th.Tensor:
-        return F.softmax(super()._output_processing(out), dim=-1)
-
-    def _sequence_processing(self, outputs: List[th.Tensor]) -> th.Tensor:
-        return outputs[-1]
 
 
 class LiquidRecurrentLast(LiquidRecurrent):

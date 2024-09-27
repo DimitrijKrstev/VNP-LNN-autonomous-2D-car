@@ -23,6 +23,6 @@ if __name__ == '__main__':
     if args.mode == "train":
         train_agent(agent, env, "test_save", num_episodes=100)
     else:
-        test_agent(agent, gym.make('CarRacing-v2', render_mode='human'), num_episodes=5)
+        test_agent(agent, gym.make('CarRacing-v2', render_mode='human', continuous=False), num_episodes=5)
 
     env.close()

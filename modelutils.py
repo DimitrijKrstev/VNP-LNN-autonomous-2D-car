@@ -4,6 +4,7 @@ import cv2
 
 
 def train_agent(agent, env, save_path, num_episodes=100, target_update_interval=10):
+    agent.q_network.train()
 
     for episode in range(num_episodes):
         state, _ = env.reset()
@@ -45,7 +46,7 @@ def test_agent(agent, env, num_episodes=5, render=True):
         render: Whether to render the environment during testing.
     """
     for episode in range(num_episodes):
-        state = env.reset()
+        state, _ = env.reset()
         state = preprocess_image(state)
         total_reward = 0
         done = False
@@ -56,7 +57,7 @@ def test_agent(agent, env, num_episodes=5, render=True):
                 env.render()
 
             # Convert state to PyTorch tensor and add batch dimension
-            state_tensor = torch.FloatTensor(state).unsqueeze(0).unsqueeze(0)
+            state_tensor = torch.FloatTensor(state).unsqueeze(0)
 
             # Forward pass through the Q-network to get Q-values for the current state
             with torch.no_grad():
@@ -65,7 +66,7 @@ def test_agent(agent, env, num_episodes=5, render=True):
             # Select action with the highest Q-value (greedy action)
             action = torch.argmax(q_values).item()
 
-            next_state, reward, done, info = env.step(action)
+            next_state, reward, done, _, info = env.step(action)
 
             next_state = preprocess_image(next_state)
 
@@ -120,6 +121,7 @@ def load_agent(agent, file_path):
         file_path: Path to the saved model (e.g., 'trained_agent.pth').
     """
     agent.q_network.load_state_dict(torch.load(file_path))
+    # agent.q_network.load_state_dict(torch.load(file_path, map_location=torch.device('cpu')))
     agent.q_network.eval()  # Set the model to evaluation mode
     print(f"Model loaded from {file_path}")
 
