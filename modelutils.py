@@ -61,7 +61,7 @@ def test_agent(agent, env, num_episodes=5, render=True):
 
             # Forward pass through the Q-network to get Q-values for the current state
             with torch.no_grad():
-                q_values, hidden_state = agent.q_network(state_tensor, hidden_state)
+                q_values, hidden_state = agent.q_network(state_tensor)
 
             # Select action with the highest Q-value (greedy action)
             action = torch.argmax(q_values).item()
@@ -120,8 +120,11 @@ def load_agent(agent, file_path):
         agent: The DQNAgent (the model architecture should be initialized).
         file_path: Path to the saved model (e.g., 'trained_agent.pth').
     """
-    agent.q_network.load_state_dict(torch.load(file_path))
-    # agent.q_network.load_state_dict(torch.load(file_path, map_location=torch.device('cpu')))
+    if agent.device.type == 'cpu':
+        agent.q_network.load_state_dict(torch.load(file_path, map_location=torch.device('cpu')))
+    else:
+        agent.q_network.load_state_dict(torch.load(file_path))
+
     agent.q_network.eval()  # Set the model to evaluation mode
     print(f"Model loaded from {file_path}")
 

@@ -9,7 +9,7 @@ from collections import deque
 
 
 class DQNAgent:
-    def __init__(self, model, input_shape, num_actions, memory_size=10000, batch_size=32, gamma=0.99, lr=0.001):
+    def __init__(self, model, num_actions, memory_size=10000, batch_size=32, gamma=0.99, lr=0.001):
         self.model = model
         self.num_actions = num_actions
         self.memory = deque(maxlen=memory_size)
@@ -23,8 +23,8 @@ class DQNAgent:
 
         # LNN as the Q-network
         if self.model == "lnn-sim":
-            self.q_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
-            self.target_network = LiquidNeuralNetwork(input_shape, num_actions).to(self.device)
+            self.q_network = LiquidNeuralNetwork(256, num_actions).to(self.device)
+            self.target_network = LiquidNeuralNetwork(256, num_actions).to(self.device)
         else:
             self.q_network = lnn.LiquidRecurrentDQN(256, 1, 4, 5).to(self.device)
             self.target_network = lnn.LiquidRecurrentDQN(256, 1, 4, 5).to(self.device)
@@ -47,7 +47,8 @@ class DQNAgent:
 
         # Inference mode, no need to track gradients
         with torch.no_grad():
-            q_values, _ = self.q_network(state)
+            q_values, _ = self.q_network.forward(state)
+
         return torch.argmax(q_values).item()
 
     def train(self):
@@ -64,6 +65,9 @@ class DQNAgent:
         reward_batch = torch.FloatTensor(reward_batch).to(self.device)
         next_state_batch = torch.FloatTensor(np.array(next_state_batch)).to(self.device)
         done_batch = torch.FloatTensor(done_batch).to(self.device)
+
+        self.q_network.reset_hidden()  # Reset the hidden state before processing the batch
+        self.target_network.reset_hidden()  # Do the same for the target network
 
         if self.model == "lnn-sim":
             q_values, _ = self.q_network.forward(state_batch)
@@ -91,6 +95,8 @@ class DQNAgent:
         # Update epsilon (exploration rate)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+        self.q_network.reset_hidden()
 
     def update_target_network(self):
         with torch.no_grad():
