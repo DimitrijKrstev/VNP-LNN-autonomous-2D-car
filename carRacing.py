@@ -571,12 +571,12 @@ class CarRacing(gym.Env, EzPickle):
             # Check if the car is outside the track and heavily punish
             if self.is_outside_track():
                 terminated = True
-                step_reward = -10000  # Heavily punish for going off-track
+                step_reward = -300  # Heavily punish for going off-track
 
             x, y = self.car.hull.position
             if abs(x) > PLAYFIELD or abs(y) > PLAYFIELD:
                 terminated = True
-                step_reward = -10000
+                step_reward = -300
 
         if self.render_mode == "human":
             self.render()

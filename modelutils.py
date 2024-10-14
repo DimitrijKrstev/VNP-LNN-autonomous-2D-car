@@ -3,8 +3,10 @@ import numpy as np
 import cv2
 
 
-def train_agent(agent, env, save_path, num_episodes=100, target_update_interval=10):
+def train_agent(agent, env, save_path, num_episodes=100, target_update_interval=15, episode_interval=20):
     agent.q_network.train()
+
+    total_episode_reward = 0
 
     for episode in range(num_episodes):
         state, _ = env.reset()
@@ -28,9 +30,15 @@ def train_agent(agent, env, save_path, num_episodes=100, target_update_interval=
 
         print(f"Episode {episode + 1}: Total Reward = {total_reward}")
 
+        total_episode_reward += total_reward
+
         if (episode + 1) % target_update_interval == 0:
-            save_agent(agent, save_path + str((episode + 1) / target_update_interval) + '.pth')
             agent.update_target_network()
+
+        if (episode + 1) % episode_interval == 0:
+            save_agent(agent, save_path + str((episode + 1) / episode_interval) + '.pth')
+            print(f"---Average Episode batch reward: {total_episode_reward / episode_interval}---")
+            total_episode_reward = 0
 
     save_agent(agent, save_path)
 

@@ -16,8 +16,8 @@ class DQNAgent:
         self.batch_size = batch_size
         self.gamma = gamma
         self.epsilon = 1.0  # Exploration rate
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_min = 0.015
+        self.epsilon_decay = 0.99995
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
